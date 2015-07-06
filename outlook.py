@@ -3,11 +3,21 @@ import email
 
 class Outlook():
 	def __init__(self):
-		import imaplib
+		self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
 		
+	def checkLogin(self):
+		username = raw_input("account : ")
+		password = raw_input("password : ")
+		try:
+			r, d = self.imap.login(username, password)
+			assert r == 'OK', 'login failed'
+		except:
+			print "Invalid Login"
+		else:
+			print "Valid Login",d
+
 	def login(self,username,password):
 	    while True:
-			self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
 			r, d = self.imap.login(username, password)
 			assert r == 'OK', 'login failed'
 			try:
@@ -15,7 +25,6 @@ class Outlook():
 			except SocketError as e:
 				print "not connected"
 				continue
-			#self.imap.logout()
 			break
 			
 	def list(self):
