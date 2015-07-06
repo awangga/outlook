@@ -19,3 +19,11 @@ mail.login('emailaccount@live.com','yourpassword')
 mail.junk()
 print mail.unread()
 ```
+
+### Retrive email element :
+```py
+print mail.mailbody()
+print mail.mailsubject()
+print mail.mailfrom()
+print mail.mailto()
+```
