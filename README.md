@@ -27,3 +27,18 @@ print mail.mailsubject()
 print mail.mailfrom()
 print mail.mailto()
 ```
+
+### To send Message :
+```py
+import outlook
+mail = outlook.Outlook()
+mail.login('emailaccount@live.com','yourpassword')
+mail.sendMail('recipient@email.com','subject','message body')
+```
+
+### To check Credentials :
+```py
+import outlook
+mail = outlook.Outlook()
+mail.checkLogin()
+```
