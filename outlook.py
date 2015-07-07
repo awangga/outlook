@@ -1,9 +1,11 @@
 import imaplib
 import email
+import smtplib
 
 class Outlook():
 	def __init__(self):
 		self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
+		self.smtp = smtplib.SMTP('smtp-mail.outlook.com')
 		
 	def checkLogin(self):
 		username = raw_input("account : ")
@@ -17,6 +19,8 @@ class Outlook():
 			print "Valid Login",d
 
 	def login(self,username,password):
+		self.username = username
+	    self.password = password
 	    while True:
 			r, d = self.imap.login(username, password)
 			assert r == 'OK', 'login failed'
@@ -26,6 +30,18 @@ class Outlook():
 				print "not connected"
 				continue
 			break
+
+	def sendEmail(self,recipient,subject,message):
+		headers = "\r\n".join(["from: " + "sms@kitaklik.com","subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
+		content = headers + "\r\n\r\n" + message
+		try:
+			self.smtp.ehlo()
+			self.smtp.starttls()
+			self.smtp.login(self.username, self.password)
+			self.smtp.sendmail(self.username, recipient, content)
+			print "email replied"
+		except smtplib.SMTPException:
+			print "Error: unable to send email"
 			
 	def list(self):
 		#self.login()
