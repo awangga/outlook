@@ -2,50 +2,64 @@ import imaplib
 import email
 import smtplib
 import datetime
+import email.mime.multipart
 
 class Outlook():
 	def __init__(self):
-		mydate = datetime.datetime.now()
+		mydate = datetime.datetime.now()-datetime.timedelta(1)
 		self.today = mydate.strftime("%d-%b-%Y")
-		self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
-		self.smtp = smtplib.SMTP('smtp-mail.outlook.com')
+		#self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
+		#self.smtp = smtplib.SMTP('smtp-mail.outlook.com')
 		
-	def checkLogin(self):
-		username = raw_input("account : ")
-		password = raw_input("password : ")
-		try:
-			r, d = self.imap.login(username, password)
-			assert r == 'OK', 'login failed'
-		except:
-			print "Invalid Login"
-		else:
-			print "Valid Login",d
-
 	def login(self,username,password):
-		self.username = username
+	    self.username = username
 	    self.password = password
 	    while True:
-			r, d = self.imap.login(username, password)
-			assert r == 'OK', 'login failed'
 			try:
-				print "Connected as ",d
-			except SocketError as e:
-				print "not connected"
+				self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
+				r, d = self.imap.login(username, password)
+				assert r == 'OK', 'login failed'
+				print " > Sign as ",d
+			except:
+				print " > Sign In ..."
 				continue
+			#self.imap.logout()
 			break
-
-	def sendEmail(self,recipient,subject,message):
-		headers = "\r\n".join(["from: " + "sms@kitaklik.com","subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
-		content = headers + "\r\n\r\n" + message
+	
+	def sendEmailMIME(self,recipient,subject,message):
+		msg = email.mime.multipart.MIMEMultipart()
+		msg['to'] = recipient
+		msg['from'] = self.username
+		msg['subject'] = subject
+		msg.add_header('reply-to', self.username)
+		#headers = "\r\n".join(["from: " + "sms@kitaklik.com","subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
+		#content = headers + "\r\n\r\n" + message
 		try:
+			self.smtp = smtplib.SMTP('smtp-mail.outlook.com',587)
 			self.smtp.ehlo()
 			self.smtp.starttls()
 			self.smtp.login(self.username, self.password)
-			self.smtp.sendmail(self.username, recipient, content)
-			print "email replied"
+			self.smtp.sendmail(msg['from'], [msg['to']], msg.as_string())
+			print "   email replied"
 		except smtplib.SMTPException:
 			print "Error: unable to send email"
-			
+	
+	def sendEmail(self,recipient,subject,message):
+		headers = "\r\n".join(["from: " + self.username,"subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
+		content = headers + "\r\n\r\n" + message
+		while True:
+			try:
+				self.smtp = smtplib.SMTP('smtp-mail.outlook.com',587)
+				self.smtp.ehlo()
+				self.smtp.starttls()
+				self.smtp.login(self.username, self.password)
+				self.smtp.sendmail(self.username, recipient, content)
+				print "   email replied"
+			except:
+				print "   Sending email..."
+				continue
+			break
+				
 	def list(self):
 		#self.login()
 		return self.imap.list()
@@ -151,4 +165,14 @@ class Outlook():
 		return self.email_message['from']
 		
 	def mailto(self):
-		return self.email_message['to']	
+		return self.email_message['to']
+		
+	def mailreturnpath(self):
+		return self.email_message['Return-Path']
+	
+	def mailreplyto(self):
+		return self.email_message['Reply-To']
+		
+	def mailall(self):
+		return self.email_message
+		
