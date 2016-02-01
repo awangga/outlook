@@ -104,6 +104,11 @@ class Outlook():
 		list = d[0].split(' ')
 		return list
 		
+	def allIds(self):
+		r, d = self.imap.search(None, "ALL")
+		list = d[0].split(' ')
+		return list
+		
 	def readIds(self):
 		r, d = self.imap.search(None, "SEEN")
 		list = d[0].split(' ')
