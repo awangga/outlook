@@ -6,6 +6,7 @@ Please make sure you have this library installed on your system first before you
  * imaplib
  * smtplib
  * datetime
+
 then rename config.py.sample to config.py and edit comment in config.py file
  
 ## Example
