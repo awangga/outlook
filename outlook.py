@@ -106,6 +106,10 @@ class Outlook():
         list = d[0].split(' ')
         return list
 
+    def hasUnread(self):
+        list = self.unreadIds()
+        return list != ['']
+
     def readIdsToday(self):
         r, d = self.imap.search(None, '(SINCE "'+self.today+'")', 'SEEN')
         list = d[0].split(' ')
