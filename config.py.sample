@@ -1,0 +1,4 @@
+config.imap_server = "imap-mail.outlook.com"
+config.imap_port = 993
+config.smtp_server = "smtp-mail.outlook.com"
+config.smtp_port = 587
