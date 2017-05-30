@@ -202,4 +202,4 @@ class Outlook():
         return self.email_message
 
     def mailbodydecoded(self):
-        return base64.b64decode(self.mailbody())
+        return base64.urlsafe_b64decode(self.mailbody())
