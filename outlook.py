@@ -4,6 +4,7 @@ import smtplib
 import datetime
 import email.mime.multipart
 import config
+import base64
 
 
 class Outlook():
@@ -199,3 +200,6 @@ class Outlook():
 
     def mailall(self):
         return self.email_message
+
+    def mailbodydecoded(self):
+        return base64.urlsafe_b64decode(self.mailbody())
