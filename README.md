@@ -4,7 +4,7 @@ Python Library to read email from live, hotmail, outlook or any microsoft email 
 ## Setup
 Simply install from this repository using pip ie
 
-    pip install -U git+https://github.com/awangga/outlook
+    pip install -U git+https://github.com/awangga/outlook#egg=outlook
 
 Rename config.py.sample to config.py and edit comment in config.py file
 
