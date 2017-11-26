@@ -3,23 +3,57 @@ import imaplib
 import smtplib
 import datetime
 import email.mime.multipart
-import config
 import base64
 
 
-class Outlook():
-    def __init__(self):
+def get_config(client):
+    """
+    Get config values for the given client
+    :param client: the client type (outlook | office365)
+    """
+    if client == 'outlook':
+        return _make_config("imap-mail.outlook.com", 993, "smtp-mail.outlook.com", 587)
+
+    if client == 'office365':
+        return _make_config("outlook.office365.com", 993, "smtp.office365.com", 587)
+
+    # more clients can be added here
+
+
+def _make_config(*args):
+    """
+    Convert args to a python dict. Expects 4 args which are values for:
+
+        [imap_server, imap_port, smtp_server, smtp_port]
+
+    :param args: the args
+    :return: dict
+    """
+    assert len(args) == 4
+
+    return {
+        'imap_server': args[0],
+        'imap_port': args[1],
+        'smtp_server': args[2],
+        'smtp_port': args[3],
+    }
+
+
+class Outlook:
+    def __init__(self, client='outlook'):
+        self.config = get_config(client)
+
         mydate = datetime.datetime.now()-datetime.timedelta(1)
         self.today = mydate.strftime("%d-%b-%Y")
-        # self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
-        # self.smtp = smtplib.SMTP('smtp-mail.outlook.com')
 
     def login(self, username, password):
         self.username = username
         self.password = password
+
         while True:
             try:
-                self.imap = imaplib.IMAP4_SSL(config.imap_server,config.imap_port)
+                self.imap = imaplib.IMAP4_SSL(self.config['imap_server'],
+                                              self.config['imap_port'])
                 r, d = self.imap.login(username, password)
                 assert r == 'OK', 'login failed'
                 print(" > Sign as ", d)
@@ -38,7 +72,7 @@ class Outlook():
         # headers = "\r\n".join(["from: " + "sms@kitaklik.com","subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
         # content = headers + "\r\n\r\n" + message
         try:
-            self.smtp = smtplib.SMTP(config.smtp_server, config.smtp_port)
+            self.smtp = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
             self.smtp.ehlo()
             self.smtp.starttls()
             self.smtp.login(self.username, self.password)
@@ -58,7 +92,7 @@ class Outlook():
         content = headers + "\r\n\r\n" + message
         while True:
             try:
-                self.smtp = smtplib.SMTP(config.smtp_server, config.smtp_port)
+                self.smtp = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
                 self.smtp.ehlo()
                 self.smtp.starttls()
                 self.smtp.login(self.username, self.password)

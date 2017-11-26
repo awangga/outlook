@@ -1,15 +1,17 @@
 # Python Outlook(Microsoft email service) Library
 Python Library to read email from live, hotmail, outlook or any microsoft email service, just dowload to yout python script folder. This library using Imaplib python to read email with IMAP protocol.
-## Prerequisite Library
-Please make sure you have this library installed on your system first before your running this code
- * email
- * imaplib
- * smtplib
- * datetime
 
-then rename config.py.sample to config.py and edit comment in config.py file
- 
+## Setup
+Simply install from this repository using pip ie
+
+    pip install -U git+https://github.com/awangga/outlook
+
+Rename config.py.sample to config.py and edit comment in config.py file
+
+Now you can just import the module as normal with `import outlook`
+
 ## Example
+
 ### To get latest Unread Message in inbox :
 ```py
 import outlook
