@@ -72,7 +72,7 @@ class Outlook:
         # headers = "\r\n".join(["from: " + "sms@kitaklik.com","subject: " + subject,"to: " + recipient,"mime-version: 1.0","content-type: text/html"])
         # content = headers + "\r\n\r\n" + message
         try:
-            self.smtp = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
+            self.smtp = smtplib.SMTP(self.config['smtp_server'], self.config['smtp_port'])
             self.smtp.ehlo()
             self.smtp.starttls()
             self.smtp.login(self.username, self.password)
@@ -92,7 +92,7 @@ class Outlook:
         content = headers + "\r\n\r\n" + message
         while True:
             try:
-                self.smtp = smtplib.SMTP(self.config.smtp_server, self.config.smtp_port)
+                self.smtp = smtplib.SMTP(self.config['smtp_server'], self.config['smtp_port'])
                 self.smtp.ehlo()
                 self.smtp.starttls()
                 self.smtp.login(self.username, self.password)
