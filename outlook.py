@@ -9,25 +9,27 @@ import base64
 
 class Outlook():
     def __init__(self):
-        mydate = datetime.datetime.now()-datetime.timedelta(1)
-        self.today = mydate.strftime("%d-%b-%Y")
+        pass
         # self.imap = imaplib.IMAP4_SSL('imap-mail.outlook.com')
         # self.smtp = smtplib.SMTP('smtp-mail.outlook.com')
 
     def login(self, username, password):
         self.username = username
         self.password = password
+        login_attempts = 0
         while True:
             try:
                 self.imap = imaplib.IMAP4_SSL(config.imap_server,config.imap_port)
                 r, d = self.imap.login(username, password)
-                assert r == 'OK', 'login failed'
-                print(" > Sign as ", d)
-            except:
-                print(" > Sign In ...")
-                continue
-            # self.imap.logout()
-            break
+                assert r == 'OK', 'login failed: %s' % str (r)
+                print(" > Signed in as %s" % self.username, d)
+                return
+            except Exception as err:
+                print(" > Sign in error: %s" % str(err))
+                login_attempts = login_attempts + 1
+                if login_attempts < 3:
+                    continue
+                assert False, 'login failed'
 
     def sendEmailMIME(self, recipient, subject, message):
         msg = email.mime.multipart.MIMEMultipart()
@@ -85,36 +87,33 @@ class Outlook():
     def logout(self):
         return self.imap.logout()
 
-    def today(self):
-        mydate = datetime.datetime.now()
+    def since_date(self, days):
+        mydate = datetime.datetime.now() - datetime.timedelta(days=days)
         return mydate.strftime("%d-%b-%Y")
 
-    def unreadIdsToday(self):
-        r, d = self.imap.search(None, '(SINCE "'+self.today+'")', 'UNSEEN')
+    def allIdsSince(self, days):
+        r, d = self.imap.search(None, '(SINCE "'+self.since_date(days)+'")', 'ALL')
         list = d[0].split(' ')
         return list
 
-    def getIdswithWord(self, ids, word):
-        stack = []
-        for id in ids:
-            self.getEmail(id)
-            if word in self.mailbody().lower():
-                stack.append(id)
-        return stack
+    def allIdsToday(self):
+        return self.allIdsSince(1)
 
-    def unreadIds(self):
-        r, d = self.imap.search(None, "UNSEEN")
+    def readIdsSince(self, days):
+        r, d = self.imap.search(None, '(SINCE "'+self.date_since(days)+'")', 'SEEN')
         list = d[0].split(' ')
         return list
-
-    def hasUnread(self):
-        list = self.unreadIds()
-        return list != ['']
 
     def readIdsToday(self):
-        r, d = self.imap.search(None, '(SINCE "'+self.today+'")', 'SEEN')
+        return self.readIdsSince(1)
+
+    def unreadIdsSince(self, days):
+        r, d = self.imap.search(None, '(SINCE "'+self.since_date(days)+'")', 'UNSEEN')
         list = d[0].split(' ')
         return list
+
+    def unreadIdsToday(self):
+        return self.unreadIdsSince(1)
 
     def allIds(self):
         r, d = self.imap.search(None, "ALL")
@@ -125,6 +124,23 @@ class Outlook():
         r, d = self.imap.search(None, "SEEN")
         list = d[0].split(' ')
         return list
+
+    def unreadIds(self):
+        r, d = self.imap.search(None, "UNSEEN")
+        list = d[0].split(' ')
+        return list
+
+    def hasUnread(self):
+        list = self.unreadIds()
+        return list != ['']
+
+    def getIdswithWord(self, ids, word):
+        stack = []
+        for id in ids:
+            self.getEmail(id)
+            if word in self.mailbody().lower():
+                stack.append(id)
+        return stack
 
     def getEmail(self, id):
         r, d = self.imap.fetch(id, "(RFC822)")
@@ -191,6 +207,9 @@ class Outlook():
 
     def mailto(self):
         return self.email_message['to']
+
+    def maildate(self):
+        return self.email_message['date']
 
     def mailreturnpath(self):
         return self.email_message['Return-Path']
