@@ -7,11 +7,12 @@ import datetime
 from pytz import timezone
 
 class OutlookMailForwarder:
-    def __init__(self, email_addr, email_passwd, since_date=1, folder_list=None, \
+    def __init__(self, email_addr, email_passwd, window_hours=24, folder_list=None, \
                  mailing_list=None, subject_pattern='', body_pattern='', filter_body=None):
         self.mail = outlook.Outlook()
         self.mail.login(email_addr, email_passwd)
-        self.since_date=since_date
+        self.window_hours = window_hours
+        self.window_days = (self.window_hours + self.window_hours % 24) / 24
         self.folder_list = folder_list
         self.mailing_list = mailing_list
         self.subject_pattern = subject_pattern
@@ -36,22 +37,22 @@ class OutlookMailForwarder:
         self.mail.getEmail(email_id)
         mailsubject = self.mail.mailsubject()
         maildate = self.mail.maildate()
-        # filter out any date between since_date and since_date + 1        
-        # because outlook searches since the start of the day
+        # filter out any date below now - window_hour
+        # because outlook searche is limited to the beginning of the day of the now - window_days
         maildatetime = datetime.datetime.strptime(maildate[:-6], '%a, %d %b %Y %H:%M:%S')
         maildatetime.replace(tzinfo=timezone('UTC'))
         timedelta = datetime.datetime.utcnow() - maildatetime
-        if timedelta > datetime.timedelta(self.since_date):
-            raise ValueError('skipping email_id %s because its timedelta %s is greater than %d days' % \
-                             (email_id, str(timedelta), self.since_date))
+        if timedelta > datetime.timedelta(0, 0, 0, 0, 0, self.window_hours):
+            raise ValueError('skipping email_id %s because its timedelta %s is greater than %d hours' % \
+                             (email_id, str(timedelta), self.window_hours))
         else:
-            print('email_id %s is within range (%s < %s)' % (email_id, str(timedelta), str(datetime.timedelta(self.since_date))))
+            print('email_id %s is within range (%s < %s)' % (email_id, str(timedelta), str(datetime.timedelta(0, 0, 0, 0, 0, self.window_hours))))
         mailsubject = mailsubject + ' ' + self.mail.maildate()
-	mailbody = self.mail.mailbody()
-	if self.filter_body is not None:
+        mailbody = self.mail.mailbody()
+        if self.filter_body is not None:
             mailbody = self.filter_body(mailbody)
         print('maillsubject to send: %s' % mailsubject)
-	print('mailbody to send: %s' % mailbody)
+        print('mailbody to send: %s' % mailbody)
         return (mailsubject, mailbody)
 
     def lookup_pattern(self):
@@ -61,7 +62,7 @@ class OutlookMailForwarder:
         for folder in self.folder_list:
             try:
                 self.mail.select(folder)
-                all_ids = self.mail.allIdsSince(self.since_date)
+                all_ids = self.mail.allIdsSince(self.window_days)
                 max_num = 100 if len(all_ids) > 100 else len(all_ids)
                 print('looking up pattern in %d/%d most recent emails in folder %s' % (max_num, len(all_ids), folder))
                 emails_with_subject_pattern = self.mail.getIdswithWord(all_ids[:max_num], self.subject_pattern)
@@ -89,9 +90,9 @@ def filter_zoom_mailbody(mailbody):
     m = re.search(r'Share recording with viewers:<br>\s*(.*)\b', mailbody)
     return m.group(1)
 
-def main(_user, _pass, since_days):
-    zoom_forwarder = OutlookMailForwarder(_user, _pass, since_days, folder_list=['zoom'], \
-                                          mailing_list=['mghnaddaf@gmail.com'], \
+def main(_user, _pass, win_hours):
+    zoom_forwarder = OutlookMailForwarder(_user, _pass, win_hours, folder_list=['zoom'], \
+                                          mailing_list=['fwd@example.com'], \
                                           subject_pattern='cloud recording', \
                                           body_pattern='share recording with viewers:', \
                                           filter_body=filter_zoom_mailbody)
@@ -100,6 +101,5 @@ def main(_user, _pass, since_days):
 if __name__ == '__main__':
     _user = raw_input('Outlook email:')
     _pass = getpass.getpass('Outlook Password:')
-    since_days = int(raw_input('how many days?'))
-    main(_user, _pass, since_days)
-
+    win_hours = int(raw_input('how many hours?'))
+    main(_user, _pass, win_hours)
