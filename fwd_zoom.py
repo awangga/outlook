@@ -6,8 +6,9 @@ import outlook
 import datetime
 from pytz import timezone
 
+
 class OutlookMailForwarder:
-    def __init__(self, email_addr, email_passwd, window_hours=24, folder_list=None, \
+    def __init__(self, email_addr, email_passwd, window_hours=24, folder_list=None,
                  mailing_list=None, subject_pattern='', body_pattern='', filter_body=None):
         self.mail = outlook.Outlook()
         self.mail.login(email_addr, email_passwd)
@@ -43,10 +44,12 @@ class OutlookMailForwarder:
         maildatetime.replace(tzinfo=timezone('UTC'))
         timedelta = datetime.datetime.utcnow() - maildatetime
         if timedelta > datetime.timedelta(0, 0, 0, 0, 0, self.window_hours):
-            raise ValueError('skipping email_id %s because its timedelta %s is greater than %d hours' % \
+            raise ValueError('skipping email_id %s because its timedelta %s is greater than %d hours' %
                              (email_id, str(timedelta), self.window_hours))
         else:
-            print('email_id %s is within range (%s < %s)' % (email_id, str(timedelta), str(datetime.timedelta(0, 0, 0, 0, 0, self.window_hours))))
+            print('email_id %s is within range (%s < %s)' % (email_id, str(timedelta),
+                                                             str(datetime.timedelta(0, 0, 0, 0, 0,
+                                                                                    self.window_hours))))
         mailsubject = mailsubject + ' ' + self.mail.maildate()
         mailbody = self.mail.mailbody()
         if self.filter_body is not None:
@@ -76,8 +79,8 @@ class OutlookMailForwarder:
             try:
                 for email_id in emails_match:
                     try:
-     		        (mailsubject, mailbody) = self.prepare_email(email_id)
- 		        self.send_email(mailsubject, mailbody)
+                        (mailsubject, mailbody) = self.prepare_email(email_id)
+                        self.send_email(mailsubject, mailbody)
                     except ValueError as err:
                         print('%s' % str(err))
                         continue
@@ -85,21 +88,30 @@ class OutlookMailForwarder:
                 print('error processing matched emails in folder %s: %s' % (folder, str(err)))
                 continue
 
+
 def filter_zoom_mailbody(mailbody):
     ''' Returns the link to share. This filters out other info in the email such as the host-only link'''
     m = re.search(r'Share recording with viewers:<br>\s*(.*)\b', mailbody)
     return m.group(1)
 
+
 def main(_user, _pass, win_hours):
-    zoom_forwarder = OutlookMailForwarder(_user, _pass, win_hours, folder_list=['zoom'], \
-                                          mailing_list=['fwd@example.com'], \
-                                          subject_pattern='cloud recording', \
-                                          body_pattern='share recording with viewers:', \
+    zoom_forwarder = OutlookMailForwarder(_user, _pass, win_hours, folder_list=['zoom'],
+                                          mailing_list=['test@example.com'],
+                                          subject_pattern='cloud recording',
+                                          body_pattern='share recording with viewers:',
                                           filter_body=filter_zoom_mailbody)
     zoom_forwarder.lookup_pattern()
 
+
 if __name__ == '__main__':
-    _user = raw_input('Outlook email:')
-    _pass = getpass.getpass('Outlook Password:')
-    win_hours = int(raw_input('how many hours?'))
+    try:
+        with open('.cred', 'r') as f:
+            userpass = f.readline()
+            (_user, _pass) = userpass.split()
+    except IOError:
+        _user = raw_input('Outlook email:')
+        _pass = getpass.getpass('Outlook Password:')
+
+    win_hours = int(raw_input('How many hours to look back?'))
     main(_user, _pass, win_hours)

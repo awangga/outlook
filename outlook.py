@@ -58,6 +58,7 @@ class Outlook():
             "content-type: text/html"
         ])
         content = headers + "\r\n\r\n" + message
+        attempts = 0
         while True:
             try:
                 self.smtp = smtplib.SMTP(config.smtp_server, config.smtp_port)
@@ -65,11 +66,14 @@ class Outlook():
                 self.smtp.starttls()
                 self.smtp.login(self.username, self.password)
                 self.smtp.sendmail(self.username, recipient, content)
-                print("   email replied")
-            except:
-                print("   Sending email...")
-                continue
-            break
+                print("   email sent.")
+                return
+            except Exception as err:
+                print("   Sending email failed: %s" % str(err))
+                attempts = attempts + 1
+                if attempts < 3:
+                    continue
+                raise Exception("Send failed. Check the recipient email address")
 
     def list(self):
         # self.login()
