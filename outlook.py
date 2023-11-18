@@ -5,7 +5,7 @@ import datetime
 import email.mime.multipart
 import config
 import base64
-
+import quopri
 
 class Outlook():
     def __init__(self):
@@ -22,7 +22,7 @@ class Outlook():
                 self.imap = imaplib.IMAP4_SSL(config.imap_server,config.imap_port)
                 r, d = self.imap.login(username, password)
                 assert r == 'OK', 'login failed: %s' % str (r)
-                print(" > Signed in as %s" % self.username, d)
+                print(" > Signed in as %s" % self.username, d[0].decode('utf-8'))
                 return
             except Exception as err:
                 print(" > Sign in error: %s" % str(err))
@@ -74,7 +74,9 @@ class Outlook():
                 if attempts < 3:
                     continue
                 raise Exception("Send failed. Check the recipient email address")
-
+    def list_folders(self):
+        resp, data = self.imap.list()
+        return [i.decode().split(' "/" ')[1].replace('"','') for i in data]
     def list(self):
         # self.login()
         return self.imap.list()
@@ -97,7 +99,7 @@ class Outlook():
 
     def allIdsSince(self, days):
         r, d = self.imap.search(None, '(SINCE "'+self.since_date(days)+'")', 'ALL')
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def allIdsToday(self):
@@ -105,7 +107,7 @@ class Outlook():
 
     def readIdsSince(self, days):
         r, d = self.imap.search(None, '(SINCE "'+self.date_since(days)+'")', 'SEEN')
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def readIdsToday(self):
@@ -113,7 +115,7 @@ class Outlook():
 
     def unreadIdsSince(self, days):
         r, d = self.imap.search(None, '(SINCE "'+self.since_date(days)+'")', 'UNSEEN')
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def unreadIdsToday(self):
@@ -121,17 +123,17 @@ class Outlook():
 
     def allIds(self):
         r, d = self.imap.search(None, "ALL")
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def readIds(self):
         r, d = self.imap.search(None, "SEEN")
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def unreadIds(self):
         r, d = self.imap.search(None, "UNSEEN")
-        list = d[0].split(' ')
+        list = d[0].decode('utf-8').split(' ')
         return list
 
     def hasUnread(self):
@@ -147,8 +149,8 @@ class Outlook():
         return stack
 
     def getEmail(self, id):
-        r, d = self.imap.fetch(id, "(RFC822)")
-        self.raw_email = d[0][1]
+        r, d = self.imap.fetch(bytes(str(id),'utf-8'), "(RFC822)")
+        self.raw_email = quopri.decodestring(d[0][1]).decode('utf-8')
         self.email_message = email.message_from_string(self.raw_email)
         return self.email_message
 
@@ -181,8 +183,8 @@ class Outlook():
     def rawRead(self):
         list = self.readIds()
         latest_id = list[-1]
-        r, d = self.imap.fetch(latest_id, "(RFC822)")
-        self.raw_email = d[0][1]
+        r, d = self.imap.fetch(bytes(latest_id,'utf-8'), "(RFC822)")
+        self.raw_email = d[0][1].decode('utf-8')
         return self.raw_email
 
     def mailbody(self):
